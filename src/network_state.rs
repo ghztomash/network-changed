@@ -94,12 +94,22 @@ impl NetworkState {
 }
 
 pub fn decrypt(data: Vec<u8>) -> Result<Vec<u8>, Error> {
-    let cocoon = Cocoon::new(b"pass").with_weak_kdf();
+    let password = b"pass";
+    let cocoon = if cfg!(debug_assertions) {
+        Cocoon::new(password).with_weak_kdf()
+    } else {
+        Cocoon::new(password)
+    };
     cocoon.unwrap(&data)
 }
 
 pub fn encrypt(data: Vec<u8>) -> Result<Vec<u8>, Error> {
-    let mut cocoon = Cocoon::new(b"pass").with_weak_kdf();
+    let password = b"pass";
+    let mut cocoon = if cfg!(debug_assertions) {
+        Cocoon::new(password).with_weak_kdf()
+    } else {
+        Cocoon::new(password)
+    };
     cocoon.wrap(&data)
 }
 
