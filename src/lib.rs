@@ -1,16 +1,17 @@
 use netdev::Interface;
 use public_ip_address::lookup::LookupProvider;
 use std::net::IpAddr;
-use std::time::Duration;
-use std::time::SystemTime;
+use std::time::{Duration, Instant};
 
-static DEFAULT_EXPIRE_TIME: u64 = 3600;
+const DEFAULT_EXPIRE_TIME: u64 = 3600;
 
+#[derive(Debug, PartialEq)]
 pub struct NetworkObserver {
     config: ObserverConfig,
     last_state: NetworkState,
 }
 
+#[derive(Debug, PartialEq)]
 pub struct ObserverConfig {
     pub expire_time: u64,
     pub all_interfaces: bool,
@@ -45,7 +46,7 @@ impl ObserverConfig {
 
 #[derive(Debug)]
 pub struct NetworkState {
-    last_update: SystemTime,
+    last_update: Instant,
     default_interface: Option<Interface>,
     all_interfaces: Option<Vec<Interface>>,
     routing_table: Option<Vec<String>>,
@@ -71,7 +72,7 @@ pub enum NetworkChange {
 impl NetworkState {
     pub fn new() -> Self {
         Self {
-            last_update: SystemTime::now(),
+            last_update: Instant::now(),
             default_interface: netdev::get_default_interface().ok(),
             all_interfaces: None,
             routing_table: None,
@@ -84,7 +85,6 @@ impl NetworkState {
         if other
             .last_update
             .duration_since(self.last_update)
-            .unwrap_or_default()
             .as_secs()
             >= config.expire_time
         {
