@@ -1,5 +1,6 @@
 use super::{NetworkChange, ObserverConfig};
 use base64::prelude::*;
+use cocoon::{Cocoon, Error};
 use directories::BaseDirs;
 use netdev::Interface;
 use serde::{Deserialize, Serialize};
@@ -78,17 +79,28 @@ impl NetworkState {
 
     pub fn save(&self) {
         let data = self.encode();
+        let data = encrypt(data).unwrap();
         let mut file = File::create(get_data_path()).unwrap();
         file.write_all(&data).unwrap();
-        // save to file
     }
 
     pub fn load() -> Self {
         let mut file = File::open(get_data_path()).unwrap();
         let mut data = Vec::new();
         file.read_to_end(&mut data).unwrap();
+        let data = decrypt(data).unwrap();
         Self::decode(data)
     }
+}
+
+pub fn decrypt(data: Vec<u8>) -> Result<Vec<u8>, Error> {
+    let cocoon = Cocoon::new(b"pass").with_weak_kdf();
+    cocoon.unwrap(&data)
+}
+
+pub fn encrypt(data: Vec<u8>) -> Result<Vec<u8>, Error> {
+    let mut cocoon = Cocoon::new(b"pass").with_weak_kdf();
+    cocoon.wrap(&data)
 }
 
 pub fn get_data_path() -> String {

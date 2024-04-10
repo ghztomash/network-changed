@@ -13,3 +13,10 @@ serde_json = {version = "1.0"}
 public-ip-address = { version = "0.2" }
 base64 = "0.22"
 directories = "5.0"
+cocoon = "0.4.1"
+
+[profile.dev.package.cocoon]
+opt-level = 3
+
+[profile.dev.package.sha2]
+opt-level = 3
