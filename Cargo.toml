@@ -7,6 +7,9 @@ edition = "2021"
 
 [dependencies]
 thiserror = "1"
-netdev = "0.25"
+netdev = { version = "0.25", features = ["serde"] }
 serde = { version = "1", features = ["derive"] }
+serde_json = {version = "1.0"}
 public-ip-address = { version = "0.2" }
+base64 = "0.22"
+directories = "5.0"

@@ -1,7 +1,9 @@
-use netdev::Interface;
+use network_state::NetworkState;
 use public_ip_address::lookup::LookupProvider;
-use std::net::IpAddr;
-use std::time::{Duration, Instant};
+use serde::{Deserialize, Serialize};
+use std::time::Duration;
+
+pub mod network_state;
 
 const DEFAULT_EXPIRE_TIME: u64 = 3600;
 
@@ -11,7 +13,7 @@ pub struct NetworkObserver {
     last_state: NetworkState,
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct ObserverConfig {
     pub expire_time: u64,
     pub all_interfaces: bool,
@@ -19,11 +21,7 @@ pub struct ObserverConfig {
 }
 
 impl ObserverConfig {
-    pub fn new(
-        expire_time: u64,
-        all_interfaces: bool,
-        public_address: bool,
-    ) -> Self {
+    pub fn new(expire_time: u64, all_interfaces: bool, public_address: bool) -> Self {
         Self {
             expire_time,
             all_interfaces,
@@ -40,20 +38,6 @@ impl ObserverConfig {
     }
 }
 
-#[derive(Debug)]
-pub struct NetworkState {
-    last_update: Instant,
-    default_interface: Option<Interface>,
-    all_interfaces: Option<Vec<Interface>>,
-    public_address: Option<IpAddr>,
-}
-
-impl PartialEq for NetworkState {
-    fn eq(&self, other: &Self) -> bool {
-        self.default_interface == other.default_interface
-    }
-}
-
 #[derive(Debug, PartialEq)]
 pub enum NetworkChange {
     None,
@@ -61,46 +45,6 @@ pub enum NetworkChange {
     DefaultInterface,
     SecondaryInterface,
     PublicAddress,
-}
-
-impl NetworkState {
-    pub fn new() -> Self {
-        Self {
-            last_update: Instant::now(),
-            default_interface: netdev::get_default_interface().ok(),
-            all_interfaces: None,
-            public_address: None,
-        }
-    }
-
-    fn compare(&self, other: &Self, config: &ObserverConfig) -> NetworkChange {
-        // check expire time
-        if other
-            .last_update
-            .duration_since(self.last_update)
-            .as_secs()
-            >= config.expire_time
-        {
-            return NetworkChange::Expired;
-        }
-
-        // check default interface
-        if self.default_interface != other.default_interface {
-            return NetworkChange::DefaultInterface;
-        }
-        if config.all_interfaces {
-            if self.all_interfaces != other.all_interfaces {
-                return NetworkChange::SecondaryInterface;
-            }
-        }
-        if config.public_address {
-            if self.public_address != other.public_address {
-                return NetworkChange::PublicAddress;
-            }
-        }
-
-        NetworkChange::None
-    }
 }
 
 impl NetworkObserver {
