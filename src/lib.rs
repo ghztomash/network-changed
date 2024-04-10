@@ -15,7 +15,6 @@ pub struct NetworkObserver {
 pub struct ObserverConfig {
     pub expire_time: u64,
     pub all_interfaces: bool,
-    pub routing_table: bool,
     pub public_address: bool,
 }
 
@@ -23,13 +22,11 @@ impl ObserverConfig {
     pub fn new(
         expire_time: u64,
         all_interfaces: bool,
-        routing_table: bool,
         public_address: bool,
     ) -> Self {
         Self {
             expire_time,
             all_interfaces,
-            routing_table,
             public_address,
         }
     }
@@ -38,7 +35,6 @@ impl ObserverConfig {
         Self {
             expire_time: 3600,
             all_interfaces: false,
-            routing_table: false,
             public_address: false,
         }
     }
@@ -49,7 +45,6 @@ pub struct NetworkState {
     last_update: Instant,
     default_interface: Option<Interface>,
     all_interfaces: Option<Vec<Interface>>,
-    routing_table: Option<Vec<String>>,
     public_address: Option<IpAddr>,
 }
 
@@ -65,7 +60,6 @@ pub enum NetworkChange {
     Expired,
     DefaultInterface,
     SecondaryInterface,
-    RoutingTable,
     PublicAddress,
 }
 
@@ -75,7 +69,6 @@ impl NetworkState {
             last_update: Instant::now(),
             default_interface: netdev::get_default_interface().ok(),
             all_interfaces: None,
-            routing_table: None,
             public_address: None,
         }
     }
@@ -100,11 +93,6 @@ impl NetworkState {
                 return NetworkChange::SecondaryInterface;
             }
         }
-        if config.routing_table {
-            if self.routing_table != other.routing_table {
-                return NetworkChange::RoutingTable;
-            }
-        }
         if config.public_address {
             if self.public_address != other.public_address {
                 return NetworkChange::PublicAddress;
@@ -116,12 +104,12 @@ impl NetworkState {
 }
 
 impl NetworkObserver {
-    pub fn new(all_interfaces: bool, routing_table: bool, public_address: bool) -> Self {
+    pub fn new(all_interfaces: bool, public_address: bool) -> Self {
         let mut current_state = NetworkState::new();
         // expire the state
         current_state.last_update -= Duration::from_secs(DEFAULT_EXPIRE_TIME);
 
-        let config = ObserverConfig::new(DEFAULT_EXPIRE_TIME, all_interfaces, routing_table, public_address);
+        let config = ObserverConfig::new(DEFAULT_EXPIRE_TIME, all_interfaces, public_address);
         NetworkObserver {
             config,
             last_state: current_state,
@@ -132,9 +120,6 @@ impl NetworkObserver {
         let mut current_state = NetworkState::new();
         if self.config.all_interfaces {
             current_state.all_interfaces = Some(netdev::get_interfaces());
-        }
-        if self.config.routing_table {
-            current_state.routing_table = None;
         }
         if self.config.public_address {
             if let Ok(response) = public_ip_address::perform_cached_lookup_with(
@@ -180,7 +165,7 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let mut observer = NetworkObserver::new(false, false, false);
+        let mut observer = NetworkObserver::new(false, false);
         assert_eq!(observer.state_change(), NetworkChange::Expired);
     }
 }
