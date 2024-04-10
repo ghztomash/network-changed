@@ -3,9 +3,9 @@ use std::io;
 
 fn main() {
     let mut input = String::new();
-    let mut observer = NetworkObserver::new(true, false);
+    let mut observer = NetworkObserver::new(true, false, false);
     loop {
-        println!("Network status changed: {}", observer.state_changed());
+        println!("Network status changed: {:?}", observer.state_change());
         match io::stdin().read_line(&mut input) {
             Ok(r) => {
                 if r == 0 {
