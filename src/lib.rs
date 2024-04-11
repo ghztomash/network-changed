@@ -16,14 +16,21 @@ pub struct NetworkObserver {
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct ObserverConfig {
     pub expire_time: u64,
+    pub persist: bool,
     pub all_interfaces: bool,
     pub public_address: bool,
 }
 
 impl ObserverConfig {
-    pub fn new(expire_time: u64, all_interfaces: bool, public_address: bool) -> Self {
+    pub fn new(
+        expire_time: u64,
+        persist: bool,
+        all_interfaces: bool,
+        public_address: bool,
+    ) -> Self {
         Self {
             expire_time,
+            persist,
             all_interfaces,
             public_address,
         }
@@ -31,10 +38,26 @@ impl ObserverConfig {
 
     pub fn default() -> Self {
         Self {
-            expire_time: 3600,
+            expire_time: DEFAULT_EXPIRE_TIME,
+            persist: false,
             all_interfaces: false,
             public_address: false,
         }
+    }
+
+    pub fn enable_public_address(&mut self, public_address: bool) -> &Self {
+        self.public_address = public_address;
+        self
+    }
+
+    pub fn enable_all_interfaces(&mut self, all_interfaces: bool) -> &Self {
+        self.all_interfaces = all_interfaces;
+        self
+    }
+
+    pub fn enable_persist(&mut self, persist: bool) -> &Self {
+        self.persist = persist;
+        self
     }
 }
 
@@ -48,12 +71,15 @@ pub enum NetworkChange {
 }
 
 impl NetworkObserver {
-    pub fn new(all_interfaces: bool, public_address: bool) -> Self {
-        let mut current_state = NetworkState::new();
+    pub fn new(config: ObserverConfig) -> Self {
+        let mut current_state = if config.persist {
+            NetworkState::new()
+        } else {
+            NetworkState::new()
+        };
         // expire the state
         current_state.last_update -= Duration::from_secs(DEFAULT_EXPIRE_TIME);
 
-        let config = ObserverConfig::new(DEFAULT_EXPIRE_TIME, all_interfaces, public_address);
         NetworkObserver {
             config,
             last_state: current_state,
@@ -109,7 +135,8 @@ mod tests {
 
     #[test]
     fn it_works() {
-        let mut observer = NetworkObserver::new(false, false);
+        let config = ObserverConfig::default();
+        let mut observer = NetworkObserver::new(config);
         assert_eq!(observer.state_change(), NetworkChange::Expired);
     }
 }

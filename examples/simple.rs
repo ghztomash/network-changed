@@ -1,9 +1,11 @@
 use network_changed::NetworkObserver;
+use network_changed::ObserverConfig;
 use std::io;
 
 fn main() {
     let mut input = String::new();
-    let mut observer = NetworkObserver::new(true, false);
+    let config = ObserverConfig::default();
+    let mut observer = NetworkObserver::new(config);
     loop {
         println!("Network status changed: {:?}", observer.state_change());
         match io::stdin().read_line(&mut input) {
