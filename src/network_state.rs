@@ -43,15 +43,21 @@ impl NetworkState {
 
         // check default interface
         if self.default_interface != other.default_interface {
+            dbg!(&self.default_interface);
+            dbg!(&other.default_interface);
             return NetworkChange::DefaultInterface;
         }
         if config.all_interfaces {
             if self.all_interfaces != other.all_interfaces {
+                dbg!(&self.all_interfaces);
+                dbg!(&other.all_interfaces);
                 return NetworkChange::SecondaryInterface;
             }
         }
         if config.public_address {
             if self.public_address != other.public_address {
+                dbg!(&self.public_address);
+                dbg!(&other.public_address);
                 return NetworkChange::PublicAddress;
             }
         }
@@ -62,16 +68,18 @@ impl NetworkState {
     pub fn encode(&self) -> Vec<u8> {
         let serialized = serde_json::to_string(&self).unwrap();
         println!("serialized = {:#?}", serialized);
-        let encoded = BASE64_STANDARD.encode(serialized);
-        println!("encoded = {:#?}", encoded);
-        encoded.into_bytes()
+        // let encoded = BASE64_STANDARD.encode(serialized);
+        // println!("encoded = {:#?}", encoded);
+        // encoded.into_bytes()
+        serialized.into_bytes()
     }
 
     pub fn decode(data: Vec<u8>) -> Self {
-        let encoded = String::from_utf8(data).unwrap();
-        println!("encoded = {:#?}", encoded);
-        let serialized = String::from_utf8(BASE64_STANDARD.decode(encoded).unwrap_or_default())
-            .unwrap_or_default();
+        // let encoded = String::from_utf8(data).unwrap();
+        // println!("encoded = {:#?}", encoded);
+        // let serialized = String::from_utf8(BASE64_STANDARD.decode(encoded).unwrap_or_default())
+        //     .unwrap_or_default();
+        let serialized = String::from_utf8(data).unwrap_or_default();
         let deserialized: Self = serde_json::from_str(&serialized).unwrap();
         println!("deserialized = {:#?}", deserialized);
         deserialized
@@ -79,7 +87,7 @@ impl NetworkState {
 
     pub fn save(&self) {
         let data = self.encode();
-        let data = encrypt(data).unwrap();
+        // let data = encrypt(data).unwrap();
         let mut file = File::create(get_data_path()).unwrap();
         file.write_all(&data).unwrap();
     }
@@ -88,7 +96,7 @@ impl NetworkState {
         let mut file = File::open(get_data_path()).unwrap();
         let mut data = Vec::new();
         file.read_to_end(&mut data).unwrap();
-        let data = decrypt(data).unwrap();
+        // let data = decrypt(data).unwrap();
         Self::decode(data)
     }
 }
