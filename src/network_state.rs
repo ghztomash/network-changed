@@ -44,21 +44,15 @@ impl NetworkState {
 
         // check default interface
         if self.default_interface != other.default_interface {
-            dbg!(&self.default_interface);
-            dbg!(&other.default_interface);
             return NetworkChange::DefaultInterface;
         }
         if config.all_interfaces {
             if self.all_interfaces != other.all_interfaces {
-                dbg!(&self.all_interfaces);
-                dbg!(&other.all_interfaces);
                 return NetworkChange::SecondaryInterface;
             }
         }
         if config.public_address {
             if self.public_address != other.public_address {
-                dbg!(&self.public_address);
-                dbg!(&other.public_address);
                 return NetworkChange::PublicAddress;
             }
         }
