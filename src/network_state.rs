@@ -1,7 +1,5 @@
 use super::{NetworkChange, ObserverConfig};
-use base64::prelude::*;
-use cocoon::{Cocoon, Error};
-use directories::BaseDirs;
+use directories::ProjectDirs;
 use netdev::Interface;
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -10,6 +8,9 @@ use std::io::Read;
 use std::io::Write;
 use std::net::IpAddr;
 use std::time::SystemTime;
+
+#[cfg(feature = "encryption")]
+use cocoon::{Cocoon, Error};
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct NetworkState {
@@ -43,15 +44,21 @@ impl NetworkState {
 
         // check default interface
         if self.default_interface != other.default_interface {
+            dbg!(&self.default_interface);
+            dbg!(&other.default_interface);
             return NetworkChange::DefaultInterface;
         }
         if config.all_interfaces {
             if self.all_interfaces != other.all_interfaces {
+                dbg!(&self.all_interfaces);
+                dbg!(&other.all_interfaces);
                 return NetworkChange::SecondaryInterface;
             }
         }
         if config.public_address {
             if self.public_address != other.public_address {
+                dbg!(&self.public_address);
+                dbg!(&other.public_address);
                 return NetworkChange::PublicAddress;
             }
         }
@@ -61,25 +68,21 @@ impl NetworkState {
 
     pub fn encode(&self) -> Vec<u8> {
         let serialized = serde_json::to_string(&self).unwrap();
-        println!("serialized = {:#?}", serialized);
-        let encoded = BASE64_STANDARD.encode(serialized);
-        println!("encoded = {:#?}", encoded);
-        encoded.into_bytes()
+        serialized.into_bytes()
     }
 
     pub fn decode(data: Vec<u8>) -> Self {
-        let encoded = String::from_utf8(data).unwrap();
-        println!("encoded = {:#?}", encoded);
-        let serialized = String::from_utf8(BASE64_STANDARD.decode(encoded).unwrap_or_default())
-            .unwrap_or_default();
+        let serialized = String::from_utf8(data).unwrap_or_default();
         let deserialized: Self = serde_json::from_str(&serialized).unwrap();
-        println!("deserialized = {:#?}", deserialized);
         deserialized
     }
 
     pub fn save(&self) {
         let data = self.encode();
+
+        #[cfg(feature = "encryption")]
         let data = encrypt(data).unwrap();
+
         let mut file = File::create(get_data_path()).unwrap();
         file.write_all(&data).unwrap();
     }
@@ -88,48 +91,54 @@ impl NetworkState {
         let mut file = File::open(get_data_path()).unwrap();
         let mut data = Vec::new();
         file.read_to_end(&mut data).unwrap();
+
+        #[cfg(feature = "encryption")]
         let data = decrypt(data).unwrap();
+
         Self::decode(data)
     }
 }
 
-pub fn decrypt(data: Vec<u8>) -> Result<Vec<u8>, Error> {
-    let password = b"pass";
+#[cfg(feature = "encryption")]
+fn decrypt(data: Vec<u8>) -> Result<Vec<u8>, Error> {
+    let password = mid::get(env!("CARGO_PKG_NAME")).unwrap();
     let cocoon = if cfg!(debug_assertions) {
-        Cocoon::new(password).with_weak_kdf()
+        Cocoon::new(password.as_bytes()).with_weak_kdf()
     } else {
-        Cocoon::new(password)
+        Cocoon::new(password.as_bytes())
     };
     cocoon.unwrap(&data)
 }
 
-pub fn encrypt(data: Vec<u8>) -> Result<Vec<u8>, Error> {
-    let password = b"pass";
+#[cfg(feature = "encryption")]
+fn encrypt(data: Vec<u8>) -> Result<Vec<u8>, Error> {
+    let password = mid::get(env!("CARGO_PKG_NAME")).unwrap();
     let mut cocoon = if cfg!(debug_assertions) {
-        Cocoon::new(password).with_weak_kdf()
+        Cocoon::new(password.as_bytes()).with_weak_kdf()
     } else {
-        Cocoon::new(password)
+        Cocoon::new(password.as_bytes())
     };
     cocoon.wrap(&data)
 }
 
 pub fn get_data_path() -> String {
-    if let Some(base_dirs) = BaseDirs::new() {
+    let file_name = "state.cache";
+    if let Some(base_dirs) = ProjectDirs::from("", "", env!("CARGO_PKG_NAME")) {
         let mut dir = base_dirs.data_dir();
         // Create directory if it doesn't exist
         if !dir.exists() && fs::create_dir_all(dir).is_err() {
             // If we can't create the data directory, fallback to cache directory
             dir = base_dirs.cache_dir();
             if !dir.exists() && fs::create_dir_all(dir).is_err() {
-                dir = base_dirs.home_dir();
+                dir = base_dirs.config_dir();
             }
         }
-        if let Some(path) = dir.join(".networkstate").to_str() {
+        if let Some(path) = dir.join(file_name).to_str() {
             return path.to_string();
         }
     };
     // If we can't get any directory, fallback to current directory
-    ".networkstate".to_string()
+    file_name.to_string()
 }
 
 #[cfg(test)]
@@ -151,5 +160,14 @@ mod tests {
         state.save();
         let loaded = NetworkState::load();
         assert_eq!(state, loaded);
+    }
+
+    #[test]
+    #[cfg(feature = "encryption")]
+    fn test_encrypt_decrypt() {
+        let data = b"hello world".to_vec();
+        let encrypted = encrypt(data.clone()).unwrap();
+        let decrypted = decrypt(encrypted).unwrap();
+        assert_eq!(data, decrypted);
     }
 }
