@@ -4,7 +4,7 @@ use std::io;
 
 fn main() {
     let mut input = String::new();
-    let config = ObserverConfig::default();
+    let config = ObserverConfig::default().enable_all_interfaces(true);
     let mut observer = NetworkObserver::new(config);
     loop {
         println!("Network status changed: {:?}", observer.state_change());

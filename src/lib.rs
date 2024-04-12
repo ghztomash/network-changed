@@ -45,18 +45,23 @@ impl ObserverConfig {
         }
     }
 
-    pub fn enable_public_address(&mut self, public_address: bool) -> &Self {
+    pub fn enable_public_address(mut self, public_address: bool) -> Self {
         self.public_address = public_address;
         self
     }
 
-    pub fn enable_all_interfaces(&mut self, all_interfaces: bool) -> &Self {
+    pub fn enable_all_interfaces(mut self, all_interfaces: bool) -> Self {
         self.all_interfaces = all_interfaces;
         self
     }
 
-    pub fn enable_persist(&mut self, persist: bool) -> &Self {
+    pub fn enable_persist(mut self, persist: bool) -> Self {
         self.persist = persist;
+        self
+    }
+
+    pub fn set_expire_time(mut self, expire_time: u64) -> Self {
+        self.expire_time = expire_time;
         self
     }
 }
