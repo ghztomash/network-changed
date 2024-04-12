@@ -1,5 +1,4 @@
-use network_changed::NetworkObserver;
-use network_changed::ObserverConfig;
+use network_changed::{NetworkObserver, ObserverConfig};
 
 fn main() {
     let config = ObserverConfig::default().enable_all_interfaces(true).enable_persist(true);

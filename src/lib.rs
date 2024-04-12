@@ -1,69 +1,16 @@
 use network_state::NetworkState;
+pub use observer_config::ObserverConfig;
+use observer_config::DEFAULT_EXPIRE_TIME;
 use public_ip_address::lookup::LookupProvider;
-use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
 pub mod network_state;
-
-const DEFAULT_EXPIRE_TIME: u64 = 3600;
+pub mod observer_config;
 
 #[derive(Debug, PartialEq)]
 pub struct NetworkObserver {
     config: ObserverConfig,
     last_state: NetworkState,
-}
-
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
-pub struct ObserverConfig {
-    pub expire_time: u64,
-    pub persist: bool,
-    pub all_interfaces: bool,
-    pub public_address: bool,
-}
-
-impl ObserverConfig {
-    pub fn new(
-        expire_time: u64,
-        persist: bool,
-        all_interfaces: bool,
-        public_address: bool,
-    ) -> Self {
-        Self {
-            expire_time,
-            persist,
-            all_interfaces,
-            public_address,
-        }
-    }
-
-    pub fn default() -> Self {
-        Self {
-            expire_time: DEFAULT_EXPIRE_TIME,
-            persist: false,
-            all_interfaces: false,
-            public_address: false,
-        }
-    }
-
-    pub fn enable_public_address(mut self, public_address: bool) -> Self {
-        self.public_address = public_address;
-        self
-    }
-
-    pub fn enable_all_interfaces(mut self, all_interfaces: bool) -> Self {
-        self.all_interfaces = all_interfaces;
-        self
-    }
-
-    pub fn enable_persist(mut self, persist: bool) -> Self {
-        self.persist = persist;
-        self
-    }
-
-    pub fn set_expire_time(mut self, expire_time: u64) -> Self {
-        self.expire_time = expire_time;
-        self
-    }
 }
 
 #[derive(Debug, PartialEq)]
