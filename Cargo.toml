@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-encrypt = []
+encryption = ["dep:cocoon", "dep:mid"]
 
 [dependencies]
 thiserror = "1"
@@ -14,16 +14,19 @@ netdev = { version = "0.25", features = ["serde"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = {version = "1.0"}
 public-ip-address = { version = "0.2" }
-base64 = "0.22"
 directories = "5.0"
-cocoon = "0.4.1"
+cocoon = { version = "0.4", optional = true }
+mid = { version = "2.0", optional = true }
 
 [profile.dev.package.cocoon]
 opt-level = 3
-
 [profile.dev.package.sha2]
 opt-level = 3
 
 [dev-dependencies]
 colored = "2.1"
 chrono = "0.4"
+
+[profile.release]
+opt-level = 3
+debug = false
