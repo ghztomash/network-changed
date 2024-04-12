@@ -24,13 +24,14 @@ pub enum NetworkChange {
 
 impl NetworkObserver {
     pub fn new(config: ObserverConfig) -> Self {
-        let mut current_state = if config.persist {
-            NetworkState::new()
+        let current_state = if config.persist {
+            NetworkState::load()
         } else {
-            NetworkState::new()
+            let mut s = NetworkState::new();
+            // expire the state
+            s.last_update -= Duration::from_secs(DEFAULT_EXPIRE_TIME);
+            s
         };
-        // expire the state
-        current_state.last_update -= Duration::from_secs(DEFAULT_EXPIRE_TIME);
 
         NetworkObserver {
             config,
@@ -78,7 +79,11 @@ impl NetworkObserver {
 }
 
 impl Drop for NetworkObserver {
-    fn drop(&mut self) {}
+    fn drop(&mut self) {
+        if self.config.persist {
+            self.last_state.save();
+        }
+    }
 }
 
 #[cfg(test)]
