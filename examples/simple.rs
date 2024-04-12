@@ -1,28 +1,23 @@
-use network_changed::NetworkObserver;
-use network_changed::ObserverConfig;
-use std::io;
+use chrono::{Timelike, Utc};
+use colored::*;
+use network_changed::{NetworkChange, NetworkObserver, ObserverConfig};
+use std::{thread, time};
 
 fn main() {
-    let mut input = String::new();
+    let sleep_time = time::Duration::from_millis(100);
+
     let config = ObserverConfig::default().enable_all_interfaces(true);
     let mut observer = NetworkObserver::new(config);
     loop {
-        println!("Network status changed: {:?}", observer.state_change());
-        match io::stdin().read_line(&mut input) {
-            Ok(r) => {
-                if r == 0 {
-                    break;
-                }
-                match input.trim() {
-                    "quit" | "q" => break,
-                    _ => (),
-                }
-                input.clear();
-            }
-            Err(error) => {
-                println!("error: {}", error);
-                break;
-            }
+        let state = observer.state_change();
+        if state != NetworkChange::None {
+            let now = Utc::now();
+            println!(
+                "{} - Network status changed: {}",
+                format!("{:02}:{:02}:{:02}", now.hour(), now.minute(), now.second(),).bold(),
+                format!("{:?}", state).blue().bold()
+            );
         }
+        thread::sleep(sleep_time);
     }
 }
