@@ -1,5 +1,6 @@
 use super::{NetworkChange, ObserverConfig};
 use directories::ProjectDirs;
+use log::{trace, warn};
 use netdev::Interface;
 use serde::{Deserialize, Serialize};
 use std::fs;
@@ -82,6 +83,7 @@ impl NetworkState {
     }
 
     pub fn load() -> Self {
+        trace!("Loading state from {}", get_data_path());
         let mut file = File::open(get_data_path()).unwrap();
         let mut data = Vec::new();
         file.read_to_end(&mut data).unwrap();
@@ -95,6 +97,7 @@ impl NetworkState {
 
 #[cfg(feature = "encryption")]
 fn decrypt(data: Vec<u8>) -> Result<Vec<u8>, Error> {
+    trace!("Decrypting data");
     let password = mid::get(env!("CARGO_PKG_NAME")).unwrap();
     let cocoon = if cfg!(debug_assertions) {
         Cocoon::new(password.as_bytes()).with_weak_kdf()
@@ -106,6 +109,7 @@ fn decrypt(data: Vec<u8>) -> Result<Vec<u8>, Error> {
 
 #[cfg(feature = "encryption")]
 fn encrypt(data: Vec<u8>) -> Result<Vec<u8>, Error> {
+    trace!("Encrypting data");
     let password = mid::get(env!("CARGO_PKG_NAME")).unwrap();
     let mut cocoon = if cfg!(debug_assertions) {
         Cocoon::new(password.as_bytes()).with_weak_kdf()

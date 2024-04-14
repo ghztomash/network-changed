@@ -3,6 +3,7 @@ pub use observer_config::ObserverConfig;
 use observer_config::DEFAULT_EXPIRE_TIME;
 use public_ip_address::lookup::LookupProvider;
 use std::time::Duration;
+use log::{trace, warn};
 
 pub mod network_state;
 pub mod observer_config;
@@ -25,6 +26,7 @@ pub enum NetworkChange {
 impl NetworkObserver {
     pub fn new(config: ObserverConfig) -> Self {
         let current_state = if config.persist {
+            trace!("Loading state");
             NetworkState::load()
         } else {
             let mut s = NetworkState::new();
@@ -57,6 +59,8 @@ impl NetworkObserver {
                 false,
             ) {
                 current_state.public_address = Some(response.ip);
+            } else {
+                warn!("Failed to get public IP address");
             }
         }
         current_state
@@ -85,6 +89,7 @@ impl NetworkObserver {
 impl Drop for NetworkObserver {
     fn drop(&mut self) {
         if self.config.persist {
+            trace!("Persisting state");
             self.last_state.save();
         }
     }
