@@ -67,6 +67,9 @@ impl NetworkObserver {
         let state_changed = self.last_state.compare(&current_state, &self.config);
 
         if state_changed != NetworkChange::None {
+            if let Some(callback) = self.config.on_change {
+                callback(&state_changed, &self.last_state, &current_state);
+            }
             //update state
             self.last_state = current_state;
         }

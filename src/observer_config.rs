@@ -1,6 +1,10 @@
 use serde::{Deserialize, Serialize};
 
+use crate::{network_state::NetworkState, NetworkChange};
+
 pub const DEFAULT_EXPIRE_TIME: u64 = 3600;
+
+type OnChangeCallback = fn(change: &NetworkChange, old: &NetworkState, new: &NetworkState);
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct ObserverConfig {
@@ -8,6 +12,8 @@ pub struct ObserverConfig {
     pub persist: bool,
     pub all_interfaces: bool,
     pub public_address: bool,
+    #[serde(skip)]
+    pub on_change: Option<OnChangeCallback>,
 }
 
 impl ObserverConfig {
@@ -22,6 +28,7 @@ impl ObserverConfig {
             persist,
             all_interfaces,
             public_address,
+            on_change: None,
         }
     }
 
@@ -31,6 +38,7 @@ impl ObserverConfig {
             persist: false,
             all_interfaces: false,
             public_address: false,
+            on_change: None,
         }
     }
 
@@ -51,6 +59,11 @@ impl ObserverConfig {
 
     pub fn set_expire_time(mut self, expire_time: u64) -> Self {
         self.expire_time = expire_time;
+        self
+    }
+
+    pub fn set_on_change(mut self, callback: OnChangeCallback) -> Self {
+        self.on_change = Some(callback);
         self
     }
 }
