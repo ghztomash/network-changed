@@ -1,4 +1,4 @@
-use chrono::{Timelike, Utc};
+use chrono::{Local, Timelike};
 use colored::*;
 use network_changed::{NetworkChange, NetworkObserver, ObserverConfig};
 use std::{thread, time};
@@ -13,7 +13,7 @@ fn main() {
     loop {
         let state = observer.state_change();
         if state != NetworkChange::None {
-            let now = Utc::now();
+            let now = Local::now();
             println!(
                 "{} - Network status changed: {}",
                 format!("{:02}:{:02}:{:02}", now.hour(), now.minute(), now.second(),).bold(),

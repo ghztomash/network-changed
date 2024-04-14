@@ -1,4 +1,4 @@
-use chrono::{Timelike, Utc};
+use chrono::{Local, Timelike};
 use colored::*;
 use network_changed::{NetworkObserver, ObserverConfig};
 
@@ -10,7 +10,7 @@ fn main() {
     let mut observer = NetworkObserver::new(config);
 
     let state = observer.state_change();
-    let now = Utc::now();
+    let now = Local::now();
 
     println!(
         "{} - Network status changed: {}",
