@@ -6,7 +6,9 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
+default = ["encryption", "async"]
 encryption = ["dep:cocoon", "dep:mid"]
+async = []
 
 [dependencies]
 thiserror = "1"

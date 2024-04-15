@@ -45,7 +45,7 @@ impl NetworkObserver {
     pub fn current_state(&self) -> NetworkState {
         let mut current_state = NetworkState::new();
         if self.config.observe_all_interfaces {
-            current_state.observe_all_interfaces = Some(netdev::get_interfaces());
+            current_state.all_interfaces = Some(netdev::get_interfaces());
         }
         if self.config.observe_public_address {
             if let Ok(response) = public_ip_address::perform_cached_lookup_with(
@@ -59,7 +59,7 @@ impl NetworkObserver {
                 Some(5),
                 false,
             ) {
-                current_state.observe_public_address = Some(response.ip);
+                current_state.public_address = Some(response.ip);
             } else {
                 warn!("Failed to get public IP address");
             }

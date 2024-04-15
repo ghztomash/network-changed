@@ -23,12 +23,12 @@ fn on_change_callback(state: &NetworkChange, old: &NetworkState, new: &NetworkSt
         NetworkChange::SecondaryInterface => "Secondary interface changed".to_string(),
         NetworkChange::PublicAddress => {
             let old = old
-                .observe_public_address
+                .public_address
                 .as_ref()
                 .map(|i| i.to_string())
                 .unwrap_or("None".to_string());
             let new = new
-                .observe_public_address
+                .public_address
                 .as_ref()
                 .map(|i| i.to_string())
                 .unwrap_or("None".to_string());

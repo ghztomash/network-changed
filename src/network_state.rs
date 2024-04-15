@@ -13,14 +13,16 @@ use std::{
 };
 
 #[cfg(feature = "encryption")]
+use crate::error::Error;
+#[cfg(feature = "encryption")]
 use cocoon::Cocoon;
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct NetworkState {
     pub last_update: SystemTime,
     pub default_interface: Option<Interface>,
-    pub observe_all_interfaces: Option<Vec<Interface>>,
-    pub observe_public_address: Option<IpAddr>,
+    pub all_interfaces: Option<Vec<Interface>>,
+    pub public_address: Option<IpAddr>,
 }
 
 impl Default for NetworkState {
@@ -34,8 +36,8 @@ impl NetworkState {
         Self {
             last_update: SystemTime::now(),
             default_interface: netdev::get_default_interface().ok(),
-            observe_all_interfaces: None,
-            observe_public_address: None,
+            all_interfaces: None,
+            public_address: None,
         }
     }
 
@@ -56,12 +58,12 @@ impl NetworkState {
             return NetworkChange::DefaultInterface;
         }
         if config.observe_all_interfaces
-            && self.observe_all_interfaces != other.observe_all_interfaces
+            && self.all_interfaces != other.all_interfaces
         {
             return NetworkChange::SecondaryInterface;
         }
         if config.observe_public_address
-            && self.observe_public_address != other.observe_public_address
+            && self.public_address != other.public_address
         {
             return NetworkChange::PublicAddress;
         }
