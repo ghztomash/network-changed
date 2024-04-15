@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [features]
-default = ["encryption", "async"]
+# default = ["encryption", "async"]
 encryption = ["dep:cocoon", "dep:mid"]
 async = []
 
@@ -29,7 +29,28 @@ opt-level = 3
 [dev-dependencies]
 colored = "2.1"
 chrono = "0.4"
+tokio = { version = "1", features = ["full"] }
 
 [profile.release]
 opt-level = 3
 debug = false
+
+[[example]]
+name = "simple"
+required-features = []
+doc-scrape-examples = true
+
+[[example]]
+name = "persist"
+required-features = []
+doc-scrape-examples = true
+
+[[example]]
+name = "callback"
+required-features = []
+doc-scrape-examples = true
+
+[[example]]
+name = "async"
+required-features = ["async"]
+doc-scrape-examples = true
