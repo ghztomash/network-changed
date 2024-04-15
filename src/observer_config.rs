@@ -10,45 +10,47 @@ type OnChangeCallback = fn(change: &NetworkChange, old: &NetworkState, new: &Net
 pub struct ObserverConfig {
     pub expire_time: u64,
     pub persist: bool,
-    pub all_interfaces: bool,
-    pub public_address: bool,
+    pub observe_all_interfaces: bool,
+    pub observe_public_address: bool,
     #[serde(skip)]
     pub on_change: Option<OnChangeCallback>,
+}
+
+impl Default for ObserverConfig {
+    fn default() -> Self {
+        Self {
+            expire_time: DEFAULT_EXPIRE_TIME,
+            persist: false,
+            observe_all_interfaces: false,
+            observe_public_address: false,
+            on_change: None,
+        }
+    }
 }
 
 impl ObserverConfig {
     pub fn new(
         expire_time: u64,
         persist: bool,
-        all_interfaces: bool,
-        public_address: bool,
+        observe_all_interfaces: bool,
+        observe_public_address: bool,
     ) -> Self {
         Self {
             expire_time,
             persist,
-            all_interfaces,
-            public_address,
+            observe_all_interfaces,
+            observe_public_address,
             on_change: None,
         }
     }
 
-    pub fn default() -> Self {
-        Self {
-            expire_time: DEFAULT_EXPIRE_TIME,
-            persist: false,
-            all_interfaces: false,
-            public_address: false,
-            on_change: None,
-        }
-    }
-
-    pub fn enable_public_address(mut self, public_address: bool) -> Self {
-        self.public_address = public_address;
+    pub fn enable_observe_public_address(mut self, observe_public_address: bool) -> Self {
+        self.observe_public_address = observe_public_address;
         self
     }
 
-    pub fn enable_all_interfaces(mut self, all_interfaces: bool) -> Self {
-        self.all_interfaces = all_interfaces;
+    pub fn enable_observe_all_interfaces(mut self, observe_all_interfaces: bool) -> Self {
+        self.observe_all_interfaces = observe_all_interfaces;
         self
     }
 
@@ -77,8 +79,8 @@ mod tests {
         let config_new = ObserverConfig::new(360, true, true, true);
         let config_set = ObserverConfig::default()
             .set_expire_time(360)
-            .enable_public_address(true)
-            .enable_all_interfaces(true)
+            .enable_observe_public_address(true)
+            .enable_observe_all_interfaces(true)
             .enable_persist(true);
         assert_eq!(config_new, config_set);
     }

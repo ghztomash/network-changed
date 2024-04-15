@@ -7,8 +7,8 @@ fn main() {
     let sleep_time = time::Duration::from_millis(100);
 
     let config = ObserverConfig::default()
-        .enable_public_address(true)
-        .enable_all_interfaces(true);
+        .enable_observe_public_address(true)
+        .enable_observe_all_interfaces(true);
     let mut observer = NetworkObserver::new(config);
     loop {
         let state = observer.state_change();

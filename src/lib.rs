@@ -1,10 +1,11 @@
-use network_state::NetworkState;
+use log::{trace, warn};
+pub use network_state::NetworkState;
 pub use observer_config::ObserverConfig;
 use observer_config::DEFAULT_EXPIRE_TIME;
 use public_ip_address::lookup::LookupProvider;
 use std::time::Duration;
-use log::{trace, warn};
 
+pub mod error;
 pub mod network_state;
 pub mod observer_config;
 
@@ -27,7 +28,7 @@ impl NetworkObserver {
     pub fn new(config: ObserverConfig) -> Self {
         let current_state = if config.persist {
             trace!("Loading state");
-            NetworkState::load()
+            NetworkState::load().unwrap_or_else(|_| NetworkState::new())
         } else {
             let mut s = NetworkState::new();
             // expire the state
@@ -43,10 +44,10 @@ impl NetworkObserver {
 
     pub fn current_state(&self) -> NetworkState {
         let mut current_state = NetworkState::new();
-        if self.config.all_interfaces {
-            current_state.all_interfaces = Some(netdev::get_interfaces());
+        if self.config.observe_all_interfaces {
+            current_state.observe_all_interfaces = Some(netdev::get_interfaces());
         }
-        if self.config.public_address {
+        if self.config.observe_public_address {
             if let Ok(response) = public_ip_address::perform_cached_lookup_with(
                 vec![
                     (LookupProvider::MyIpCom, None),
@@ -58,7 +59,7 @@ impl NetworkObserver {
                 Some(5),
                 false,
             ) {
-                current_state.public_address = Some(response.ip);
+                current_state.observe_public_address = Some(response.ip);
             } else {
                 warn!("Failed to get public IP address");
             }
@@ -90,7 +91,7 @@ impl Drop for NetworkObserver {
     fn drop(&mut self) {
         if self.config.persist {
             trace!("Persisting state");
-            self.last_state.save();
+            _ = self.last_state.save();
         }
     }
 }

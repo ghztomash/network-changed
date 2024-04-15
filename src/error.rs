@@ -13,14 +13,6 @@ pub enum Error {
     SerializationError(#[from] serde_json::Error),
     #[error("File error")]
     FileError(#[from] std::io::Error),
-    #[error("Utf8 error")]
-    Utf8Error(#[from] std::string::FromUtf8Error),
-    #[error("Time error")]
-    TimeError(#[from] std::time::SystemTimeError),
-    #[cfg(feature = "encryption")]
     #[error("Encryption error")]
     EncryptionError(String),
-    #[cfg(feature = "encryption")]
-    #[error("Machine identifier error")]
-    IdentifierError(String),
 }

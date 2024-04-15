@@ -1,24 +1,32 @@
 use super::{NetworkChange, ObserverConfig};
+use crate::error::Result;
 use directories::ProjectDirs;
-use log::{trace, warn};
+use log::trace;
 use netdev::Interface;
 use serde::{Deserialize, Serialize};
-use std::fs;
-use std::fs::File;
-use std::io::Read;
-use std::io::Write;
-use std::net::IpAddr;
-use std::time::SystemTime;
+use std::{
+    fs,
+    fs::File,
+    io::{Read, Write},
+    net::IpAddr,
+    time::SystemTime,
+};
 
 #[cfg(feature = "encryption")]
-use cocoon::{Cocoon, Error};
+use cocoon::Cocoon;
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct NetworkState {
     pub last_update: SystemTime,
     pub default_interface: Option<Interface>,
-    pub all_interfaces: Option<Vec<Interface>>,
-    pub public_address: Option<IpAddr>,
+    pub observe_all_interfaces: Option<Vec<Interface>>,
+    pub observe_public_address: Option<IpAddr>,
+}
+
+impl Default for NetworkState {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl NetworkState {
@@ -26,8 +34,8 @@ impl NetworkState {
         Self {
             last_update: SystemTime::now(),
             default_interface: netdev::get_default_interface().ok(),
-            all_interfaces: None,
-            public_address: None,
+            observe_all_interfaces: None,
+            observe_public_address: None,
         }
     }
 
@@ -47,76 +55,83 @@ impl NetworkState {
         if self.default_interface != other.default_interface {
             return NetworkChange::DefaultInterface;
         }
-        if config.all_interfaces {
-            if self.all_interfaces != other.all_interfaces {
-                return NetworkChange::SecondaryInterface;
-            }
+        if config.observe_all_interfaces
+            && self.observe_all_interfaces != other.observe_all_interfaces
+        {
+            return NetworkChange::SecondaryInterface;
         }
-        if config.public_address {
-            if self.public_address != other.public_address {
-                return NetworkChange::PublicAddress;
-            }
+        if config.observe_public_address
+            && self.observe_public_address != other.observe_public_address
+        {
+            return NetworkChange::PublicAddress;
         }
 
         NetworkChange::None
     }
 
-    pub fn encode(&self) -> Vec<u8> {
-        let serialized = serde_json::to_string(&self).unwrap();
-        serialized.into_bytes()
+    pub fn encode(&self) -> Result<Vec<u8>> {
+        let serialized = serde_json::to_string(&self)?;
+        Ok(serialized.into_bytes())
     }
 
-    pub fn decode(data: Vec<u8>) -> Self {
+    pub fn decode(data: Vec<u8>) -> Result<Self> {
         let serialized = String::from_utf8(data).unwrap_or_default();
-        let deserialized: Self = serde_json::from_str(&serialized).unwrap();
-        deserialized
+        let deserialized: Self = serde_json::from_str(&serialized)?;
+        Ok(deserialized)
     }
 
-    pub fn save(&self) {
-        let data = self.encode();
+    pub fn save(&self) -> Result<()> {
+        let data = self.encode()?;
 
         #[cfg(feature = "encryption")]
-        let data = encrypt(data).unwrap();
+        let data = encrypt(data)?;
 
-        let mut file = File::create(get_data_path()).unwrap();
-        file.write_all(&data).unwrap();
+        let mut file = File::create(get_data_path())?;
+        file.write_all(&data)?;
+        Ok(())
     }
 
-    pub fn load() -> Self {
+    pub fn load() -> Result<Self> {
         trace!("Loading state from {}", get_data_path());
-        let mut file = File::open(get_data_path()).unwrap();
+        let mut file = File::open(get_data_path())?;
         let mut data = Vec::new();
-        file.read_to_end(&mut data).unwrap();
+        file.read_to_end(&mut data)?;
 
         #[cfg(feature = "encryption")]
-        let data = decrypt(data).unwrap();
+        let data = decrypt(data)?;
 
         Self::decode(data)
     }
 }
 
 #[cfg(feature = "encryption")]
-fn decrypt(data: Vec<u8>) -> Result<Vec<u8>, Error> {
+fn decrypt(data: Vec<u8>) -> Result<Vec<u8>> {
     trace!("Decrypting data");
-    let password = mid::get(env!("CARGO_PKG_NAME")).unwrap();
+    let password = mid::get(env!("CARGO_PKG_NAME")).unwrap_or("network_state".to_string());
     let cocoon = if cfg!(debug_assertions) {
         Cocoon::new(password.as_bytes()).with_weak_kdf()
     } else {
         Cocoon::new(password.as_bytes())
     };
-    cocoon.unwrap(&data)
+    match cocoon.unwrap(&data) {
+        Ok(data) => Ok(data),
+        Err(e) => Err(Error::EncryptionError(format!("Error decrypting: {:?}", e))),
+    }
 }
 
 #[cfg(feature = "encryption")]
-fn encrypt(data: Vec<u8>) -> Result<Vec<u8>, Error> {
+fn encrypt(data: Vec<u8>) -> Result<Vec<u8>> {
     trace!("Encrypting data");
-    let password = mid::get(env!("CARGO_PKG_NAME")).unwrap();
+    let password = mid::get(env!("CARGO_PKG_NAME")).unwrap_or("network_state".to_string());
     let mut cocoon = if cfg!(debug_assertions) {
         Cocoon::new(password.as_bytes()).with_weak_kdf()
     } else {
         Cocoon::new(password.as_bytes())
     };
-    cocoon.wrap(&data)
+    match cocoon.wrap(&data) {
+        Ok(data) => Ok(data),
+        Err(e) => Err(Error::EncryptionError(format!("Error encrypting: {:?}", e))),
+    }
 }
 
 pub fn get_data_path() -> String {
@@ -146,8 +161,8 @@ mod tests {
     #[test]
     fn test_encode_decode() {
         let state = NetworkState::new();
-        let encoded = state.encode();
-        let decoded = NetworkState::decode(encoded);
+        let encoded = state.encode().unwrap();
+        let decoded = NetworkState::decode(encoded).unwrap();
         assert_eq!(state, decoded);
     }
 
@@ -155,8 +170,8 @@ mod tests {
     fn test_save_load() {
         dbg!(get_data_path());
         let state = NetworkState::new();
-        state.save();
-        let loaded = NetworkState::load();
+        state.save().unwrap();
+        let loaded = NetworkState::load().unwrap();
         assert_eq!(state, loaded);
     }
 
