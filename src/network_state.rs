@@ -1,69 +1,21 @@
 use super::{NetworkChange, ObserverConfig};
 use crate::error::Result;
 use directories::ProjectDirs;
-use hash_map_diff::HashMapDiff;
 use log::trace;
 use netdev::Interface;
 use serde::{Deserialize, Serialize};
 use std::{
-    collections::HashMap,
     fs::{self, File},
     io::{Read, Write},
     net::IpAddr,
     time::SystemTime,
 };
+pub use crate::network_interfaces::Interfaces;
 
 #[cfg(feature = "encryption")]
 use crate::error::Error;
 #[cfg(feature = "encryption")]
 use cocoon::Cocoon;
-
-#[derive(Serialize, Deserialize, Default, Debug)]
-pub struct Interfaces {
-    all: HashMap<String, Interface>,
-}
-
-impl PartialEq for Interfaces {
-    fn eq(&self, other: &Self) -> bool {
-        self.all == other.all
-    }
-}
-
-impl Interfaces {
-    pub fn new(interfaces: Vec<Interface>) -> Self {
-        let mut set = HashMap::new();
-        for interface in interfaces {
-            set.insert(interface.name.to_owned(), interface);
-        }
-        Self { all: set }
-    }
-
-    pub fn diff(&self, other: &Self) -> HashMapDiff<String, Interface> {
-        let lhs = self.all.to_owned();
-        let rhs = other.all.to_owned();
-        let mut updated = HashMap::new();
-        let mut removed = HashMap::new();
-
-        for (key, value) in &lhs {
-            if !rhs.contains_key(key) {
-                removed.insert(key.to_string(), value.clone());
-            }
-        }
-
-        for (key, new_value) in rhs {
-            if let Some(old_value) = lhs.get(&key) {
-                if new_value != old_value.clone() {
-                    updated.insert(key, new_value);
-                }
-            } else {
-                updated.insert(key, new_value);
-            }
-        }
-
-        let diff: HashMapDiff<String, Interface> = HashMapDiff { updated, removed };
-        diff
-    }
-}
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct NetworkState {

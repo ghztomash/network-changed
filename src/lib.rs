@@ -6,6 +6,7 @@ use public_ip_address::lookup::LookupProvider;
 use std::time::Duration;
 
 pub mod error;
+pub mod network_interfaces;
 pub mod network_state;
 pub mod observer_config;
 

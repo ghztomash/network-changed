@@ -1,7 +1,8 @@
 use chrono::{Local, Timelike};
 use colored::*;
 use network_changed::{
-    network_state::NetworkState, NetworkChange, NetworkObserver, ObserverConfig,
+    network_state::Interfaces, network_state::NetworkState, NetworkChange, NetworkObserver,
+    ObserverConfig,
 };
 use std::{thread, time};
 
@@ -20,14 +21,39 @@ fn on_change_callback(state: &NetworkChange, old: &NetworkState, new: &NetworkSt
                 .unwrap_or("None");
             format!("{} -> {}", old.yellow().bold(), new.yellow().bold())
         }
-        NetworkChange::SecondaryInterface =>  {
-            let old = old
-                .all_interfaces.as_ref().unwrap();
-            let new = new
-                .all_interfaces.as_ref().unwrap();
-            let diff = old.diff(new);
-            format!("{:?}", diff)
-        },
+        NetworkChange::SecondaryInterface => {
+            let old = old.all_interfaces.as_ref().unwrap();
+            let new = new.all_interfaces.as_ref().unwrap();
+            let diff = Interfaces::diff(old, new);
+            let added = diff
+                .added
+                .to_owned()
+                .keys()
+                .map(|i| i.to_string())
+                .collect::<Vec<String>>()
+                .join(", ")
+                .bold()
+                .green();
+            let updated = diff
+                .updated
+                .to_owned()
+                .keys()
+                .map(|i| i.to_string())
+                .collect::<Vec<String>>()
+                .join(", ")
+                .bold()
+                .yellow();
+            let removed = diff
+                .removed
+                .to_owned()
+                .keys()
+                .map(|i| i.to_string())
+                .collect::<Vec<String>>()
+                .join(", ")
+                .bold()
+                .red();
+            format!("~[{}], +[{}], -[{}]", updated, added, removed)
+        }
         NetworkChange::PublicAddress => {
             let old = old
                 .public_address
@@ -42,9 +68,12 @@ fn on_change_callback(state: &NetworkChange, old: &NetworkState, new: &NetworkSt
             format!("{} -> {}", old.yellow().bold(), new.yellow().bold())
         }
         NetworkChange::Expired => {
-            let diff = new.last_update.duration_since(old.last_update).unwrap_or_default();
+            let diff = new
+                .last_update
+                .duration_since(old.last_update)
+                .unwrap_or_default();
             format!("{} seconds", diff.as_secs().to_string().yellow().bold())
-        },
+        }
         _ => "".to_string(),
     };
     let now = Local::now();
