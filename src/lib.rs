@@ -65,6 +65,7 @@ impl NetworkObserver {
             ) {
                 current_state.public_address = Some(response.ip);
             } else {
+                current_state.public_address = None;
                 warn!("Failed to get public IP address");
             }
         }
