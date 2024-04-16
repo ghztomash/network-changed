@@ -1,5 +1,5 @@
 use log::{trace, warn};
-pub use network_state::NetworkState;
+pub use network_state::{Interfaces, NetworkState};
 pub use observer_config::ObserverConfig;
 use observer_config::DEFAULT_EXPIRE_TIME;
 use public_ip_address::lookup::LookupProvider;
@@ -48,7 +48,7 @@ impl NetworkObserver {
     pub fn current_state(&self) -> NetworkState {
         let mut current_state = NetworkState::new();
         if self.config.observe_all_interfaces {
-            current_state.all_interfaces = Some(netdev::get_interfaces());
+            current_state.all_interfaces = Some(Interfaces::new(netdev::get_interfaces()));
         }
         if self.config.observe_public_address {
             if let Ok(response) = public_ip_address::perform_cached_lookup_with(

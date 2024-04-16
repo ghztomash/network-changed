@@ -1,12 +1,13 @@
 use super::{NetworkChange, ObserverConfig};
 use crate::error::Result;
 use directories::ProjectDirs;
+use hash_map_diff::HashMapDiff;
 use log::trace;
 use netdev::Interface;
 use serde::{Deserialize, Serialize};
 use std::{
-    fs,
-    fs::File,
+    collections::HashMap,
+    fs::{self, File},
     io::{Read, Write},
     net::IpAddr,
     time::SystemTime,
@@ -17,11 +18,58 @@ use crate::error::Error;
 #[cfg(feature = "encryption")]
 use cocoon::Cocoon;
 
+#[derive(Serialize, Deserialize, Default, Debug)]
+pub struct Interfaces {
+    all: HashMap<String, Interface>,
+}
+
+impl PartialEq for Interfaces {
+    fn eq(&self, other: &Self) -> bool {
+        self.all == other.all
+    }
+}
+
+impl Interfaces {
+    pub fn new(interfaces: Vec<Interface>) -> Self {
+        let mut set = HashMap::new();
+        for interface in interfaces {
+            set.insert(interface.name.to_owned(), interface);
+        }
+        Self { all: set }
+    }
+
+    pub fn diff(&self, other: &Self) -> HashMapDiff<String, Interface> {
+        let lhs = self.all.to_owned();
+        let rhs = other.all.to_owned();
+        let mut updated = HashMap::new();
+        let mut removed = HashMap::new();
+
+        for (key, value) in &lhs {
+            if !rhs.contains_key(key) {
+                removed.insert(key.to_string(), value.clone());
+            }
+        }
+
+        for (key, new_value) in rhs {
+            if let Some(old_value) = lhs.get(&key) {
+                if new_value != old_value.clone() {
+                    updated.insert(key, new_value);
+                }
+            } else {
+                updated.insert(key, new_value);
+            }
+        }
+
+        let diff: HashMapDiff<String, Interface> = HashMapDiff { updated, removed };
+        diff
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
 pub struct NetworkState {
     pub last_update: SystemTime,
     pub default_interface: Option<Interface>,
-    pub all_interfaces: Option<Vec<Interface>>,
+    pub all_interfaces: Option<Interfaces>,
     pub public_address: Option<IpAddr>,
 }
 
@@ -57,14 +105,10 @@ impl NetworkState {
         if self.default_interface != other.default_interface {
             return NetworkChange::DefaultInterface;
         }
-        if config.observe_all_interfaces
-            && self.all_interfaces != other.all_interfaces
-        {
+        if config.observe_all_interfaces && self.all_interfaces != other.all_interfaces {
             return NetworkChange::SecondaryInterface;
         }
-        if config.observe_public_address
-            && self.public_address != other.public_address
-        {
+        if config.observe_public_address && self.public_address != other.public_address {
             return NetworkChange::PublicAddress;
         }
 

@@ -18,9 +18,16 @@ fn on_change_callback(state: &NetworkChange, old: &NetworkState, new: &NetworkSt
                 .as_ref()
                 .map(|i| i.name.as_str())
                 .unwrap_or("None");
-            format!("Default interface changed: {} -> {}", old, new)
+            format!("{} -> {}", old.yellow().bold(), new.yellow().bold())
         }
-        NetworkChange::SecondaryInterface => "Secondary interface changed".to_string(),
+        NetworkChange::SecondaryInterface =>  {
+            let old = old
+                .all_interfaces.as_ref().unwrap();
+            let new = new
+                .all_interfaces.as_ref().unwrap();
+            let diff = old.diff(new);
+            format!("{:?}", diff)
+        },
         NetworkChange::PublicAddress => {
             let old = old
                 .public_address
@@ -32,9 +39,12 @@ fn on_change_callback(state: &NetworkChange, old: &NetworkState, new: &NetworkSt
                 .as_ref()
                 .map(|i| i.to_string())
                 .unwrap_or("None".to_string());
-            format!("Public address changed: {} -> {}", old, new)
+            format!("{} -> {}", old.yellow().bold(), new.yellow().bold())
         }
-        NetworkChange::Expired => "State expired".to_string(),
+        NetworkChange::Expired => {
+            let diff = new.last_update.duration_since(old.last_update).unwrap_or_default();
+            format!("{} seconds", diff.as_secs().to_string().yellow().bold())
+        },
         _ => "".to_string(),
     };
     let now = Local::now();
@@ -51,6 +61,7 @@ fn main() {
 
     let config = ObserverConfig::default()
         .enable_observe_public_address(true)
+        .enable_observe_all_interfaces(true)
         .set_on_change(on_change_callback);
     let mut observer = NetworkObserver::new(config);
     loop {
