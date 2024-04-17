@@ -8,6 +8,7 @@ type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
 #[tokio::main]
 async fn main() -> Result<()> {
+    env_logger::init();
     let sleep_time = time::Duration::from_millis(100);
 
     let config = ObserverConfig::default()
@@ -15,7 +16,7 @@ async fn main() -> Result<()> {
         .set_on_change(|state, _, _| {
             let now = Local::now();
             println!(
-                "\n{} - Network status changed: {}",
+                "\n{} - Network changed: {}",
                 format!("{:02}:{:02}:{:02}", now.hour(), now.minute(), now.second(),).bold(),
                 format!("{:?}", state).blue().bold()
             );
@@ -31,7 +32,7 @@ async fn main() -> Result<()> {
     });
 
     print!("Doing something very important...");
-    for _ in 0..100 {
+    loop {
         print!(".");
         stdout().flush().unwrap();
         thread::sleep(time::Duration::from_millis(1000));

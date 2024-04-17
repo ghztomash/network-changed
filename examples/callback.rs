@@ -78,7 +78,7 @@ fn on_change_callback(state: &NetworkChange, old: &NetworkState, new: &NetworkSt
     };
     let now = Local::now();
     println!(
-        "{} - Network status changed: {} - {}",
+        "{} - Network changed: {} - {}",
         format!("{:02}:{:02}:{:02}", now.hour(), now.minute(), now.second(),).bold(),
         format!("{:?}", state).blue().bold(),
         description
@@ -86,6 +86,7 @@ fn on_change_callback(state: &NetworkChange, old: &NetworkState, new: &NetworkSt
 }
 
 fn main() {
+    env_logger::init();
     let sleep_time = time::Duration::from_millis(100);
 
     let config = ObserverConfig::default()

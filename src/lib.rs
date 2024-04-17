@@ -60,7 +60,7 @@ impl NetworkObserver {
                     (LookupProvider::IpInfo, None),
                 ],
                 None,
-                Some(5),
+                Some(10),
                 false,
             ) {
                 current_state.public_address = Some(response.ip);

@@ -4,6 +4,7 @@ use network_changed::{NetworkChange, NetworkObserver, ObserverConfig};
 use std::{thread, time};
 
 fn main() {
+    env_logger::init();
     let sleep_time = time::Duration::from_millis(100);
 
     let config = ObserverConfig::default()
@@ -15,7 +16,7 @@ fn main() {
         if state != NetworkChange::None {
             let now = Local::now();
             println!(
-                "{} - Network status changed: {}",
+                "{} - Network changed: {}",
                 format!("{:02}:{:02}:{:02}", now.hour(), now.minute(), now.second(),).bold(),
                 format!("{:?}", state).blue().bold()
             );
