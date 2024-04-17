@@ -42,10 +42,7 @@ impl NetworkObserver {
             last_state: current_state,
         }
     }
-}
 
-#[cfg(not(feature = "async"))]
-impl NetworkObserver {
     pub fn current_state(&self) -> NetworkState {
         let mut current_state = NetworkState::new();
         if self.config.observe_all_interfaces {
@@ -74,6 +71,7 @@ impl NetworkObserver {
 
     pub fn state_change(&mut self) -> NetworkChange {
         let current_state = self.current_state();
+
         let state_changed = self.last_state.compare(&current_state, &self.config);
 
         if state_changed != NetworkChange::None {
@@ -89,53 +87,6 @@ impl NetworkObserver {
 
     pub fn state_did_change(&mut self) -> bool {
         self.state_change() != NetworkChange::None
-    }
-}
-
-#[cfg(feature = "async")]
-impl NetworkObserver {
-    pub async fn current_state(&self) -> NetworkState {
-        let mut current_state = NetworkState::new();
-        if self.config.observe_all_interfaces {
-            current_state.all_interfaces = Some(netdev::get_interfaces());
-        }
-        if self.config.observe_public_address {
-            if let Ok(response) = public_ip_address::perform_cached_lookup_with(
-                vec![
-                    (LookupProvider::MyIpCom, None),
-                    (LookupProvider::GetJsonIp, None),
-                    (LookupProvider::Ipify, None),
-                    (LookupProvider::IpInfo, None),
-                ],
-                None,
-                Some(5),
-                false,
-            ) {
-                current_state.public_address = Some(response.ip);
-            } else {
-                warn!("Failed to get public IP address");
-            }
-        }
-        current_state
-    }
-
-    pub async fn state_change(&mut self) -> NetworkChange {
-        let current_state = self.current_state().await;
-        let state_changed = self.last_state.compare(&current_state, &self.config);
-
-        if state_changed != NetworkChange::None {
-            // call on_change callback
-            if let Some(callback) = self.config.on_change {
-                callback(&state_changed, &self.last_state, &current_state);
-            }
-            //update state
-            self.last_state = current_state;
-        }
-        state_changed
-    }
-
-    pub async fn state_did_change(&mut self) -> bool {
-        self.state_change().await != NetworkChange::None
     }
 }
 
@@ -165,6 +116,6 @@ mod tests {
     async fn it_works() {
         let config = ObserverConfig::default();
         let mut observer = NetworkObserver::new(config);
-        assert_eq!(observer.state_change().await, NetworkChange::Expired);
+        assert_eq!(observer.state_change(), NetworkChange::Expired);
     }
 }

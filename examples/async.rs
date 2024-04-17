@@ -25,16 +25,15 @@ async fn main() -> Result<()> {
     // observe in a separate thread
     tokio::spawn(async move {
         loop {
-            _ = observer.state_change().await;
+            _ = observer.state_change();
             thread::sleep(sleep_time);
         }
     });
 
     print!("Doing something very important...");
-    for _ in 0..100 {
+    loop {
         print!(".");
         stdout().flush().unwrap();
         thread::sleep(time::Duration::from_millis(1000));
     }
-    Ok(())
 }
