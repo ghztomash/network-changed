@@ -72,6 +72,7 @@ impl NetworkObserver {
         current_state
     }
 
+    /// Check if the network state has changed
     pub fn state_change(&mut self) -> NetworkChange {
         let current_state = self.current_state();
         let state_changed = self.last_state.compare(&current_state, &self.config);
