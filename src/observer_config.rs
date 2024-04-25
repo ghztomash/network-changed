@@ -12,6 +12,8 @@ pub struct ObserverConfig {
     pub persist: bool,
     pub observe_all_interfaces: bool,
     pub observe_public_address: bool,
+    pub observe_default_route: bool,
+    pub observe_all_routes: bool,
     #[serde(skip)]
     pub on_change: Option<OnChangeCallback>,
 }
@@ -23,6 +25,8 @@ impl Default for ObserverConfig {
             persist: false,
             observe_all_interfaces: false,
             observe_public_address: false,
+            observe_default_route: false,
+            observe_all_routes: false,
             on_change: None,
         }
     }
@@ -34,12 +38,16 @@ impl ObserverConfig {
         persist: bool,
         observe_all_interfaces: bool,
         observe_public_address: bool,
+        observe_default_route: bool,
+        observe_all_routes: bool,
     ) -> Self {
         Self {
             expire_time,
             persist,
             observe_all_interfaces,
             observe_public_address,
+            observe_default_route,
+            observe_all_routes,
             on_change: None,
         }
     }
@@ -51,6 +59,16 @@ impl ObserverConfig {
 
     pub fn enable_observe_all_interfaces(mut self, observe_all_interfaces: bool) -> Self {
         self.observe_all_interfaces = observe_all_interfaces;
+        self
+    }
+
+    pub fn enable_observe_default_route(mut self, observe_default_route: bool) -> Self {
+        self.observe_default_route = observe_default_route;
+        self
+    }
+
+    pub fn enable_observe_all_routes(mut self, observe_all_routes: bool) -> Self {
+        self.observe_all_routes = observe_all_routes;
         self
     }
 
@@ -76,11 +94,13 @@ mod tests {
 
     #[test]
     fn config() {
-        let config_new = ObserverConfig::new(360, true, true, true);
+        let config_new = ObserverConfig::new(360, true, true, true, true, true);
         let config_set = ObserverConfig::default()
             .set_expire_time(360)
             .enable_observe_public_address(true)
             .enable_observe_all_interfaces(true)
+            .enable_observe_default_route(true)
+            .enable_observe_all_routes(true)
             .enable_persist(true);
         assert_eq!(config_new, config_set);
     }

@@ -1,4 +1,4 @@
-use log::{trace, warn};
+use log::{debug, trace, warn};
 pub use network_state::{Interfaces, NetworkState};
 pub use observer_config::ObserverConfig;
 use observer_config::DEFAULT_EXPIRE_TIME;
@@ -9,6 +9,7 @@ pub mod error;
 pub mod network_interfaces;
 pub mod network_state;
 pub mod observer_config;
+pub mod routes;
 
 #[derive(Debug, PartialEq)]
 pub struct NetworkObserver {
@@ -16,12 +17,15 @@ pub struct NetworkObserver {
     last_state: NetworkState,
 }
 
+#[non_exhaustive]
 #[derive(Debug, PartialEq)]
 pub enum NetworkChange {
     None,
     Expired,
     DefaultInterface,
     SecondaryInterface,
+    DefaultRoute,
+    RoutingTable,
     PublicAddress,
 }
 
@@ -48,9 +52,37 @@ impl NetworkObserver {
     #[maybe_async::maybe_async]
     pub async fn current_state(&self) -> NetworkState {
         let mut current_state = NetworkState::new();
+        // update current state
         if self.config.observe_all_interfaces {
             current_state.all_interfaces = Some(Interfaces::new(netdev::get_interfaces()));
         }
+        // get default route
+        if self.config.observe_default_route {
+            if let Ok(handle) = net_route::Handle::new() {
+                if let Some(route) = handle.default_route().await.unwrap() {
+                    debug!("Default route:\n{:?}", route);
+                    current_state.default_route = Some(route.into())
+                } else {
+                    warn!("No default route");
+                }
+            } else {
+                warn!("Failed to get route handle");
+            }
+        }
+        // get all routes
+        if self.config.observe_all_routes {
+            if let Ok(handle) = net_route::Handle::new() {
+                if let Ok(routes) = handle.list().await {
+                    debug!("All routes:\n{:?}", routes);
+                    current_state.all_routes = Some(routes.into_iter().map(|r| r.into()).collect());
+                } else {
+                    warn!("Failed to get all routes");
+                }
+            } else {
+                warn!("Failed to get route handle");
+            }
+        }
+        // get public address
         if self.config.observe_public_address {
             if let Ok(response) = public_ip_address::perform_cached_lookup_with(
                 vec![

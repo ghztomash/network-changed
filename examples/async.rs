@@ -13,6 +13,8 @@ async fn main() -> Result<()> {
 
     let config = ObserverConfig::default()
         .enable_observe_public_address(false)
+        .enable_observe_default_route(true)
+        .enable_observe_all_routes(true)
         .set_on_change(|state, _, _| {
             let now = Local::now();
             println!(

@@ -78,7 +78,7 @@ fn on_change_callback(state: &NetworkChange, old: &NetworkState, new: &NetworkSt
     };
     let now = Local::now();
     println!(
-        "{} - Network changed: {} - {}",
+        "{} - Network change: {} - {}",
         format!("{:02}:{:02}:{:02}", now.hour(), now.minute(), now.second(),).bold(),
         format!("{:?}", state).blue().bold(),
         description

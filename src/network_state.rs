@@ -1,6 +1,7 @@
 use super::{NetworkChange, ObserverConfig};
 use crate::error::Result;
 pub use crate::network_interfaces::Interfaces;
+pub use crate::routes::Route;
 use directories::ProjectDirs;
 use log::trace;
 use netdev::Interface;
@@ -22,6 +23,8 @@ pub struct NetworkState {
     pub last_update: SystemTime,
     pub default_interface: Option<Interface>,
     pub all_interfaces: Option<Interfaces>,
+    pub default_route: Option<Route>,
+    pub all_routes: Option<Vec<Route>>,
     pub public_address: Option<IpAddr>,
 }
 
@@ -37,6 +40,8 @@ impl NetworkState {
             last_update: SystemTime::now(),
             default_interface: netdev::get_default_interface().ok(),
             all_interfaces: None,
+            default_route: None,
+            all_routes: None,
             public_address: None,
         }
     }
@@ -59,6 +64,12 @@ impl NetworkState {
         }
         if config.observe_all_interfaces && self.all_interfaces != other.all_interfaces {
             return NetworkChange::SecondaryInterface;
+        }
+        if config.observe_default_route && self.default_route != other.default_route {
+            return NetworkChange::DefaultRoute;
+        }
+        if config.observe_all_routes && self.all_routes != other.all_routes {
+            return NetworkChange::RoutingTable;
         }
         if config.observe_public_address && self.public_address != other.public_address {
             return NetworkChange::PublicAddress;
