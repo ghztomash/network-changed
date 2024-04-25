@@ -94,6 +94,7 @@ fn main() {
         .enable_observe_all_interfaces(true)
         .set_on_change(on_change_callback);
     let mut observer = NetworkObserver::new(config);
+    println!("Listenign for changes, press Ctrl+C to cancel...");
     loop {
         _ = observer.state_change();
         thread::sleep(sleep_time);

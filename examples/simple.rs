@@ -11,6 +11,8 @@ fn main() {
         .enable_observe_public_address(true)
         .enable_observe_all_interfaces(true);
     let mut observer = NetworkObserver::new(config);
+
+    println!("Listenign for changes, press Ctrl+C to cancel...");
     loop {
         let state = observer.state_change();
         if state != NetworkChange::None {

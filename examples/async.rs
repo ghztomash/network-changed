@@ -31,11 +31,10 @@ async fn main() -> Result<()> {
         }
     });
 
-    print!("Doing something very important...");
+    println!("Doing something very important, press Ctrl+C to cancel...");
     loop {
         print!(".");
         stdout().flush().unwrap();
         thread::sleep(time::Duration::from_millis(1000));
     }
-    Ok(())
 }
