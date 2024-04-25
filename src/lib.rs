@@ -44,9 +44,9 @@ impl NetworkObserver {
     }
 }
 
-#[cfg(not(feature = "async"))]
 impl NetworkObserver {
-    pub fn current_state(&self) -> NetworkState {
+    #[maybe_async::maybe_async]
+    pub async fn current_state(&self) -> NetworkState {
         let mut current_state = NetworkState::new();
         if self.config.observe_all_interfaces {
             current_state.all_interfaces = Some(Interfaces::new(netdev::get_interfaces()));
@@ -62,7 +62,9 @@ impl NetworkObserver {
                 None,
                 Some(10),
                 false,
-            ) {
+            )
+            .await
+            {
                 current_state.public_address = Some(response.ip);
             } else {
                 current_state.public_address = None;
@@ -72,54 +74,7 @@ impl NetworkObserver {
         current_state
     }
 
-    /// Check if the network state has changed
-    pub fn state_change(&mut self) -> NetworkChange {
-        let current_state = self.current_state();
-        let state_changed = self.last_state.compare(&current_state, &self.config);
-
-        if state_changed != NetworkChange::None {
-            // call on_change callback
-            if let Some(callback) = self.config.on_change {
-                callback(&state_changed, &self.last_state, &current_state);
-            }
-            //update state
-            self.last_state = current_state;
-        }
-        state_changed
-    }
-
-    pub fn state_did_change(&mut self) -> bool {
-        self.state_change() != NetworkChange::None
-    }
-}
-
-#[cfg(feature = "async")]
-impl NetworkObserver {
-    pub async fn current_state(&self) -> NetworkState {
-        let mut current_state = NetworkState::new();
-        if self.config.observe_all_interfaces {
-            current_state.all_interfaces = Some(netdev::get_interfaces());
-        }
-        if self.config.observe_public_address {
-            if let Ok(response) = public_ip_address::perform_cached_lookup_with(
-                vec![
-                    (LookupProvider::MyIpCom, None),
-                    (LookupProvider::GetJsonIp, None),
-                    (LookupProvider::Ipify, None),
-                    (LookupProvider::IpInfo, None),
-                ],
-                None,
-                Some(5),
-                false,
-            ) {
-                current_state.public_address = Some(response.ip);
-            } else {
-                warn!("Failed to get public IP address");
-            }
-        }
-        current_state
-    }
-
+    #[maybe_async::maybe_async]
     pub async fn state_change(&mut self) -> NetworkChange {
         let current_state = self.current_state().await;
         let state_changed = self.last_state.compare(&current_state, &self.config);
@@ -135,6 +90,7 @@ impl NetworkObserver {
         state_changed
     }
 
+    #[maybe_async::maybe_async]
     pub async fn state_did_change(&mut self) -> bool {
         self.state_change().await != NetworkChange::None
     }
@@ -153,16 +109,7 @@ impl Drop for NetworkObserver {
 mod tests {
     use super::*;
 
-    #[cfg(not(feature = "async"))]
-    #[test]
-    fn it_works() {
-        let config = ObserverConfig::default();
-        let mut observer = NetworkObserver::new(config);
-        assert_eq!(observer.state_change(), NetworkChange::Expired);
-    }
-
-    #[cfg(feature = "async")]
-    #[tokio::test]
+    #[maybe_async::test(feature = "blocking", async(not(feature = "blocking"), tokio::test))]
     async fn it_works() {
         let config = ObserverConfig::default();
         let mut observer = NetworkObserver::new(config);

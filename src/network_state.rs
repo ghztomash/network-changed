@@ -1,5 +1,6 @@
 use super::{NetworkChange, ObserverConfig};
 use crate::error::Result;
+pub use crate::network_interfaces::Interfaces;
 use directories::ProjectDirs;
 use log::trace;
 use netdev::Interface;
@@ -10,7 +11,6 @@ use std::{
     net::IpAddr,
     time::SystemTime,
 };
-pub use crate::network_interfaces::Interfaces;
 
 #[cfg(feature = "encryption")]
 use crate::error::Error;
