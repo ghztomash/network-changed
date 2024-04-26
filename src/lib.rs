@@ -1,4 +1,4 @@
-use log::{debug, trace, warn};
+use log::{trace, warn};
 pub use network_state::{Interfaces, NetworkState};
 pub use observer_config::ObserverConfig;
 use observer_config::DEFAULT_EXPIRE_TIME;
@@ -58,29 +58,11 @@ impl NetworkObserver {
         }
         // get default route
         if self.config.observe_default_route {
-            if let Ok(handle) = net_route::Handle::new() {
-                if let Some(route) = handle.default_route().await.unwrap() {
-                    debug!("Default route:\n{:?}", route);
-                    current_state.default_route = Some(route.into())
-                } else {
-                    warn!("No default route");
-                }
-            } else {
-                warn!("Failed to get route handle");
-            }
+            current_state.default_route = routes::get_default_route().await;
         }
         // get all routes
         if self.config.observe_all_routes {
-            if let Ok(handle) = net_route::Handle::new() {
-                if let Ok(routes) = handle.list().await {
-                    debug!("All routes:\n{:?}", routes);
-                    current_state.all_routes = Some(routes.into_iter().map(|r| r.into()).collect());
-                } else {
-                    warn!("Failed to get all routes");
-                }
-            } else {
-                warn!("Failed to get route handle");
-            }
+            current_state.all_routes = routes::get_all_routes().await;
         }
         // get public address
         if self.config.observe_public_address {

@@ -1,3 +1,4 @@
+use log::{debug, warn};
 use net_route::Route as NetRoute;
 use serde::{Deserialize, Serialize};
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr};
@@ -71,4 +72,35 @@ impl From<NetRoute> for Route {
             ifindex: route.ifindex,
         }
     }
+}
+
+#[maybe_async::maybe_async]
+pub async fn get_default_route() -> Option<Route> {
+    if let Ok(handle) = net_route::Handle::new() {
+        let default_route = handle.default_route().await;
+
+        if let Some(route) = default_route.unwrap() {
+            debug!("Default route:\n{:?}", route);
+            return Some(route.into());
+        }
+    } else {
+        warn!("Failed to get route handle");
+    }
+    warn!("No default route");
+    None
+}
+
+#[maybe_async::maybe_async]
+pub async fn get_all_routes() -> Option<Vec<Route>> {
+    if let Ok(handle) = net_route::Handle::new() {
+        let routes = handle.list().await;
+        if let Ok(routes) = routes {
+            debug!("All routes:\n{:?}", routes);
+            return Some(routes.into_iter().map(|r| r.into()).collect());
+        }
+    } else {
+        warn!("Failed to get route handle");
+    }
+    warn!("Failed to get all routes");
+    None
 }

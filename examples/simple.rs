@@ -1,8 +1,8 @@
 use chrono::{Local, Timelike};
 use colored::*;
 use network_changed::{NetworkChange, NetworkObserver, ObserverConfig};
-use std::{thread, time};
 use std::error::Error;
+use std::{thread, time};
 
 #[cfg_attr(not(feature = "blocking"), tokio::main)]
 #[maybe_async::maybe_async]
