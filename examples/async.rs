@@ -6,7 +6,8 @@ use std::{thread, time};
 
 type Result<T> = std::result::Result<T, Box<dyn std::error::Error>>;
 
-#[tokio::main]
+#[cfg_attr(not(feature = "blocking"), tokio::main)]
+#[maybe_async::maybe_async]
 async fn main() -> Result<()> {
     env_logger::init();
     let sleep_time = time::Duration::from_millis(100);

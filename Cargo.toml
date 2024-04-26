@@ -39,16 +39,6 @@ opt-level = 3
 debug = false
 
 [[example]]
-name = "simple"
-required-features = ["blocking"]
-doc-scrape-examples = true
-
-[[example]]
-name = "persist"
-required-features = ["blocking"]
-doc-scrape-examples = true
-
-[[example]]
-name = "callback"
+name = "blocking"
 required-features = ["blocking"]
 doc-scrape-examples = true

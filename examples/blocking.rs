@@ -2,11 +2,8 @@ use chrono::{Local, Timelike};
 use colored::*;
 use network_changed::{NetworkChange, NetworkObserver, ObserverConfig};
 use std::{thread, time};
-use std::error::Error;
 
-#[cfg_attr(not(feature = "blocking"), tokio::main)]
-#[maybe_async::maybe_async]
-async fn main() -> Result<(), Box<dyn Error>> {
+fn main() {
     env_logger::init();
     let sleep_time = time::Duration::from_millis(100);
 
@@ -17,7 +14,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     println!("Listenign for changes, press Ctrl+C to cancel...");
     loop {
-        let state = observer.state_change().await;
+        let state = observer.state_change();
         if state != NetworkChange::None {
             let now = Local::now();
             println!(

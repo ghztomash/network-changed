@@ -4,6 +4,7 @@ use network_changed::{
     network_state::Interfaces, network_state::NetworkState, NetworkChange, NetworkObserver,
     ObserverConfig,
 };
+use std::error::Error;
 use std::{thread, time};
 
 fn on_change_callback(state: &NetworkChange, old: &NetworkState, new: &NetworkState) {
@@ -85,7 +86,9 @@ fn on_change_callback(state: &NetworkChange, old: &NetworkState, new: &NetworkSt
     );
 }
 
-fn main() {
+#[cfg_attr(not(feature = "blocking"), tokio::main)]
+#[maybe_async::maybe_async]
+async fn main() -> Result<(), Box<dyn Error>> {
     env_logger::init();
     let sleep_time = time::Duration::from_millis(100);
 
