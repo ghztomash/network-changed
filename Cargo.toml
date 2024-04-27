@@ -7,7 +7,7 @@ edition = "2021"
 
 [features]
 encryption = ["dep:cocoon", "dep:mid"]
-blocking = ["maybe-async/is_sync", "public-ip-address/blocking"]
+blocking = ["maybe-async/is_sync", "public-ip-address/blocking", "dep:futures"]
 
 [dependencies]
 thiserror = "1"
@@ -21,6 +21,7 @@ maybe-async = "0.2"
 cocoon = { version = "0.4", optional = true }
 mid = { version = "2.0", optional = true }
 net-route = "0.4"
+futures = { version = "0.3", optional = true }
 
 [profile.dev.package.cocoon]
 opt-level = 3
