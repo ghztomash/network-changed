@@ -79,9 +79,11 @@ pub async fn get_default_route() -> Option<Route> {
     if let Ok(handle) = net_route::Handle::new() {
         let default_route = handle.default_route().await;
 
-        if let Some(route) = default_route.unwrap() {
-            debug!("Default route:\n{:?}", route);
-            return Some(route.into());
+        if let Ok(route) = default_route {
+            if let Some(route) = route {
+                debug!("Default route:\n{:?}", route);
+                return Some(route.into());
+            }
         }
     } else {
         warn!("Failed to get route handle");
@@ -94,6 +96,7 @@ pub async fn get_default_route() -> Option<Route> {
 pub async fn get_all_routes() -> Option<Vec<Route>> {
     if let Ok(handle) = net_route::Handle::new() {
         let routes = handle.list().await;
+
         if let Ok(routes) = routes {
             debug!("All routes:\n{:?}", routes);
             return Some(routes.into_iter().map(|r| r.into()).collect());
